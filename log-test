@@ -1,0 +1,18 @@
+fetch('https://hook.eu1.make.com/8lr6xilpkimon9ms55fceop3jqpuupng', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    type: 'new_collab',
+    card_name: 'TERKA — тест рілс',
+    date_due: '2026-07-15',
+    suma: 3500,
+    category: 'Хімія',
+    label_ids: ['674ed7e25fa592b4e18d3559', '674ed7e3461421ff6708cce8'],
+    brief_url: 'https://docs.google.com/test',
+    mgr_nick: '@manager_test',
+    mgr_platform: 'Telegram',
+    cover_image: null
+  })
+})
+.then(r => r.text())
+.then(console.log)

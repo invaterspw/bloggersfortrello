@@ -42,9 +42,7 @@
     letter-spacing: 0.04em;
     color: var(--accent);
   }
-  .header-sub {
-    font-size: 11px; color: var(--muted); margin-top: 2px;
-  }
+  .header-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
 
   .panel { padding: 20px 16px 140px; }
 
@@ -89,24 +87,22 @@
   }
   select option { background: #22222a; }
 
-  textarea { resize: none; min-height: 80px; line-height: 1.5; }
-
-  /* Мультивибір міток */
-  .chip-group { display: flex; flex-wrap: wrap; gap: 8px; }
+  /* Мітки — дві колонки чіпів */
+  .chip-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .chip { position: relative; }
   .chip input[type="checkbox"] { position: absolute; opacity: 0; width: 0; height: 0; }
   .chip label {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 9px 14px;
+    display: flex; align-items: center; gap: 7px;
+    padding: 10px 13px;
     background: var(--surface2);
     border: 1px solid var(--border);
-    border-radius: 100px;
+    border-radius: var(--radius);
     cursor: pointer;
-    font-size: 13px; font-weight: 500;
+    font-size: 12px; font-weight: 500;
     color: var(--muted);
     transition: all 0.18s;
     margin: 0;
-    white-space: nowrap;
+    line-height: 1.3;
   }
   .chip input[type="checkbox"]:checked + label {
     background: rgba(200,240,74,0.13);
@@ -114,21 +110,21 @@
     color: var(--accent);
   }
   .chip-dot {
-    width: 8px; height: 8px; border-radius: 50%;
+    width: 9px; height: 9px; border-radius: 50%;
     flex-shrink: 0;
   }
 
-  /* Вибір платформи менеджера */
+  /* Платформа менеджера */
   .platform-group { display: flex; gap: 8px; margin-top: 8px; }
   .platform-opt { position: relative; flex: 1; }
   .platform-opt input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
   .platform-opt label {
-    display: flex; align-items: center; justify-content: center; gap: 6px;
-    padding: 11px 8px;
+    display: flex; align-items: center; justify-content: center; gap: 5px;
+    padding: 11px 6px;
     background: var(--surface2);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    cursor: pointer; font-size: 13px; font-weight: 500;
+    cursor: pointer; font-size: 12px; font-weight: 500;
     color: var(--muted); transition: all 0.18s; margin: 0;
   }
   .platform-opt input[type="radio"]:checked + label {
@@ -136,7 +132,7 @@
     border-color: var(--accent); color: var(--accent);
   }
 
-  /* Завантаження фото */
+  /* Фото */
   .photo-upload {
     border: 2px dashed var(--border);
     border-radius: var(--radius);
@@ -144,7 +140,6 @@
     cursor: pointer; transition: border-color 0.2s;
     position: relative; overflow: hidden;
   }
-  .photo-upload:hover { border-color: var(--muted); }
   .photo-upload.has-photo { border-color: var(--accent); border-style: solid; }
   .photo-upload input[type="file"] {
     position: absolute; inset: 0; opacity: 0;
@@ -153,13 +148,9 @@
   }
   .photo-icon { font-size: 28px; margin-bottom: 6px; }
   .photo-label { font-size: 13px; color: var(--muted); }
-  .photo-preview {
-    width: 100%; max-height: 120px; object-fit: cover;
-    border-radius: calc(var(--radius) - 4px);
-    display: none;
-  }
-  .photo-preview.show { display: block; }
   .photo-hint { font-size: 11px; color: var(--muted); margin-top: 6px; }
+  .photo-preview { width: 100%; max-height: 120px; object-fit: cover; border-radius: 10px; display: none; }
+  .photo-preview.show { display: block; }
 
   .optional {
     display: inline-block; font-size: 10px;
@@ -167,15 +158,13 @@
     border-radius: 4px; padding: 1px 6px; margin-left: 6px;
   }
 
-  /* Статус (авто) */
+  /* Статус авто */
   .status-badge {
     display: inline-flex; align-items: center; gap: 8px;
     background: rgba(255,95,95,0.12);
     border: 1px solid rgba(255,95,95,0.35);
-    border-radius: 100px;
-    padding: 8px 16px;
-    font-size: 13px; font-weight: 500;
-    color: #ff5f5f;
+    border-radius: 100px; padding: 8px 16px;
+    font-size: 13px; font-weight: 500; color: #ff5f5f;
   }
   .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #ff5f5f; }
 
@@ -210,9 +199,6 @@
   .toast.show { opacity: 1; }
   .toast.ok { border-color: var(--accent); color: var(--accent); }
   .toast.err { border-color: var(--error); color: var(--error); }
-
-  /* Прихований canvas для кропу */
-  #crop-canvas { display: none; }
 </style>
 </head>
 <body>
@@ -224,34 +210,33 @@
 
 <div class="panel">
 
-  <!-- НАЗВА -->
+  <!-- КАРТКА -->
   <div class="section-label">Картка</div>
   <div class="field">
     <label>Назва картки *</label>
     <input type="text" id="card-name" placeholder="Наприклад: TERKA — рілс червень" autocomplete="off">
   </div>
-
   <div class="field">
     <label>Дата співпраці (завершення) *</label>
     <input type="date" id="card-date">
   </div>
-
-  <!-- СТАТУС (авто) -->
   <div class="field">
     <label>Статус</label>
-    <div class="status-badge"><div class="status-dot"></div> Не сплачено — виставляється автоматично</div>
+    <div class="status-badge"><div class="status-dot"></div>Не сплачено — виставляється автоматично</div>
   </div>
 
-  <!-- ФОРМАТ (мультивибір) -->
-  <div class="section-label">Формат співпраці *</div>
+  <!-- МІТКИ -->
+  <div class="section-label">Мітки</div>
+
+  <label style="margin-bottom:8px;">Формат співпраці *</label>
   <div class="chip-group" id="format-group">
     <div class="chip">
-      <input type="checkbox" id="fmt-reels-joint" value="674efc3fc689bcd5092763e8">
-      <label for="fmt-reels-joint"><span class="chip-dot" style="background:#4caf6e"></span>Інста + спільна</label>
+      <input type="checkbox" id="fmt-inst-joint" value="674efc3fc689bcd5092763e8">
+      <label for="fmt-inst-joint"><span class="chip-dot" style="background:#4caf6e"></span>Інста + спільна</label>
     </div>
     <div class="chip">
-      <input type="checkbox" id="fmt-reels-solo" value="67f7b33e1ba6c84cff640d8b">
-      <label for="fmt-reels-solo"><span class="chip-dot" style="background:#8bc34a"></span>Інста (без співавт.)</label>
+      <input type="checkbox" id="fmt-inst-solo" value="67f7b33e1ba6c84cff640d8b">
+      <label for="fmt-inst-solo"><span class="chip-dot" style="background:#8bc34a"></span>Інста (без співавт.)</label>
     </div>
     <div class="chip">
       <input type="checkbox" id="fmt-tiktok" value="674ed7e3461421ff6708cce8">
@@ -275,7 +260,23 @@
     </div>
   </div>
 
-  <!-- СУМА -->
+  <label style="margin-top:14px; margin-bottom:8px; display:block;">Службові мітки <span class="optional">необов'язково</span></label>
+  <div class="chip-group" id="service-group">
+    <div class="chip">
+      <input type="checkbox" id="svc-prev" value="68de426cac27dc99e69b40ee">
+      <label for="svc-prev"><span class="chip-dot" style="background:#ff8a80"></span>Попередній запис</label>
+    </div>
+    <div class="chip">
+      <input type="checkbox" id="svc-tz" value="6797517137c4a11eceff3fe5">
+      <label for="svc-tz"><span class="chip-dot" style="background:#5b9bd5"></span>ТЗ в листуванні</label>
+    </div>
+    <div class="chip">
+      <input type="checkbox" id="svc-docs" value="67a619b6fc7345014e7ea677">
+      <label for="svc-docs"><span class="chip-dot" style="background:#f0c330"></span>Зробити документи</label>
+    </div>
+  </div>
+
+  <!-- ФІНАНСИ -->
   <div class="section-label">Фінанси</div>
   <div class="field">
     <label>Сума співпраці (грн) *</label>
@@ -287,17 +288,17 @@
     <label>Категорія *</label>
     <select id="card-category">
       <option value="" disabled selected>Оберіть категорію…</option>
-      <option value="Хімія">Хімія</option>
-      <option value="Пральні засоби">Пральні засоби</option>
-      <option value="Доглядова косметика">Доглядова косметика</option>
-      <option value="Декоративна косметика">Декоративна косметика</option>
-      <option value="Засоби для волосся">Засоби для волосся</option>
-      <option value="Одяг">Одяг</option>
-      <option value="Маркетплейси">Маркетплейси</option>
-      <option value="Побутова техніка">Побутова техніка</option>
-      <option value="Дитячі товари">Дитячі товари</option>
-      <option value="Іграшки">Іграшки</option>
-      <option value="Інше">Інше</option>
+      <option>Хімія</option>
+      <option>Пральні засоби</option>
+      <option>Доглядова косметика</option>
+      <option>Декоративна косметика</option>
+      <option>Засоби для волосся</option>
+      <option>Одяг</option>
+      <option>Маркетплейси</option>
+      <option>Побутова техніка</option>
+      <option>Дитячі товари</option>
+      <option>Іграшки</option>
+      <option>Інше</option>
     </select>
   </div>
 
@@ -340,7 +341,7 @@
       <div id="photo-placeholder">
         <div class="photo-icon">📷</div>
         <div class="photo-label">Завантажити скрін</div>
-        <div class="photo-hint">Залишить верхні 250px — буде обкладинкою картки</div>
+        <div class="photo-hint">Залишить верхні 250px → стане обкладинкою картки</div>
       </div>
       <img id="photo-preview" class="photo-preview" alt="preview">
     </div>
@@ -348,53 +349,46 @@
 
 </div>
 
-<canvas id="crop-canvas"></canvas>
+<canvas id="crop-canvas" style="display:none;"></canvas>
 
 <div class="submit-wrap">
   <button id="submit-btn">Створити картку в Trello</button>
 </div>
-
 <div class="toast" id="toast"></div>
 
 <script>
-  // ── Telegram ──────────────────────────────────────────
   const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
   if (tg) { tg.ready(); tg.expand(); }
 
-  // ── Config ────────────────────────────────────────────
-  const WEBHOOK = 'https://hook.eu1.make.com/8lr6xilpkimon9ms55fceop3jqpuupng';
-  const LABEL_NOT_PAID = '674ed7e25fa592b4e18d3559'; // Не сплачено
+  const WEBHOOK       = 'https://hook.eu1.make.com/8lr6xilpkimon9ms55fceop3jqpuupng';
+  const LABEL_NOT_PAID = '674ed7e25fa592b4e18d3559';
 
   // ── Toast ─────────────────────────────────────────────
   function showToast(msg, type) {
-    const el = document.getElementById('toast');
+    var el = document.getElementById('toast');
     el.textContent = msg;
     el.className = 'toast show ' + type;
     setTimeout(function() { el.classList.remove('show'); }, 3500);
   }
 
-  // ── Фото: кроп верхніх CROP_PX пікселів ──────────────
-  const CROP_PX = 250;
-  let croppedBase64 = null;
+  // ── Кроп фото ─────────────────────────────────────────
+  var croppedBase64 = null;
+  var CROP_PX = 250;
 
   document.getElementById('photo-input').addEventListener('change', function(e) {
-    const file = e.target.files[0];
+    var file = e.target.files[0];
     if (!file) return;
-
-    const reader = new FileReader();
+    var reader = new FileReader();
     reader.onload = function(ev) {
-      const img = new Image();
+      var img = new Image();
       img.onload = function() {
-        const canvas = document.getElementById('crop-canvas');
-        const cropH = Math.min(CROP_PX, img.height);
-        canvas.width  = img.width;
+        var canvas = document.getElementById('crop-canvas');
+        var cropH = Math.min(CROP_PX, img.height);
+        canvas.width = img.width;
         canvas.height = cropH;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, img.width, cropH, 0, 0, img.width, cropH);
+        canvas.getContext('2d').drawImage(img, 0, 0, img.width, cropH, 0, 0, img.width, cropH);
         croppedBase64 = canvas.toDataURL('image/jpeg', 0.88);
-
-        // Показуємо прев'ю
-        const preview = document.getElementById('photo-preview');
+        var preview = document.getElementById('photo-preview');
         preview.src = croppedBase64;
         preview.classList.add('show');
         document.getElementById('photo-placeholder').style.display = 'none';
@@ -405,16 +399,20 @@
     reader.readAsDataURL(file);
   });
 
-  // ── Валідація ─────────────────────────────────────────
-  function getSelectedFormats() {
-    return Array.from(document.querySelectorAll('#format-group input[type="checkbox"]:checked'))
-      .map(function(cb) { return cb.value; });
+  // ── Збір міток ────────────────────────────────────────
+  function getSelectedLabels() {
+    var ids = [];
+    document.querySelectorAll('#format-group input[type="checkbox"]:checked, #service-group input[type="checkbox"]:checked')
+      .forEach(function(cb) { ids.push(cb.value); });
+    if (!ids.includes(LABEL_NOT_PAID)) ids.push(LABEL_NOT_PAID);
+    return ids;
   }
 
+  // ── Валідація ─────────────────────────────────────────
   function validate() {
     if (!document.getElementById('card-name').value.trim()) return 'Введіть назву картки';
     if (!document.getElementById('card-date').value)        return 'Вкажіть дату співпраці';
-    if (getSelectedFormats().length === 0)                  return 'Оберіть формат співпраці';
+    if (!document.querySelectorAll('#format-group input:checked').length) return 'Оберіть формат співпраці';
     if (!document.getElementById('card-suma').value)        return 'Введіть суму';
     if (!document.getElementById('card-category').value)    return 'Оберіть категорію';
     return null;
@@ -422,39 +420,32 @@
 
   // ── Submit ────────────────────────────────────────────
   document.getElementById('submit-btn').addEventListener('click', function() {
-    const err = validate();
+    var err = validate();
     if (err) { showToast(err, 'err'); return; }
 
-    const btn = document.getElementById('submit-btn');
+    var btn = document.getElementById('submit-btn');
     btn.disabled = true;
     btn.textContent = 'Створюємо картку…';
 
-    // Збираємо мітки: формати + обов'язково "Не сплачено"
-    const labelIds = getSelectedFormats();
-    if (!labelIds.includes(LABEL_NOT_PAID)) labelIds.push(LABEL_NOT_PAID);
+    var mgrPlatform = document.querySelector('input[name="mgr-platform"]:checked');
 
-    // Менеджер
-    const mgrNick     = document.getElementById('mgr-nick').value.trim();
-    const mgrPlatform = (document.querySelector('input[name="mgr-platform"]:checked') || {}).value || '';
-
-    // Payload
-    const payload = {
-      type:          'new_collab',
-      card_name:     document.getElementById('card-name').value.trim(),
-      date_due:      document.getElementById('card-date').value,       // YYYY-MM-DD
-      suma:          Number(document.getElementById('card-suma').value),
-      category:      document.getElementById('card-category').value,
-      label_ids:     labelIds,
-      brief_url:     document.getElementById('card-brief').value.trim(),
-      mgr_nick:      mgrNick,
-      mgr_platform:  mgrPlatform,
-      cover_image:   croppedBase64 || null  // base64 або null
+    var payload = {
+      type:         'new_collab',
+      card_name:    document.getElementById('card-name').value.trim(),
+      date_due:     document.getElementById('card-date').value,
+      suma:         Number(document.getElementById('card-suma').value),
+      category:     document.getElementById('card-category').value,
+      label_ids:    getSelectedLabels(),
+      brief_url:    document.getElementById('card-brief').value.trim(),
+      mgr_nick:     document.getElementById('mgr-nick').value.trim(),
+      mgr_platform: mgrPlatform ? mgrPlatform.value : '',
+      cover_image:  croppedBase64 || null
     };
 
     fetch(WEBHOOK, {
-      method:  'POST',
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify(payload)
+      body: JSON.stringify(payload)
     })
     .then(function(r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);

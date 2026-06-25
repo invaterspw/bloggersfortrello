@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Нова співпраця | Trello</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;700&family=Geologica:wght@300;400;500&display=swap');
+
+  :root {
+    --bg: #0f0f12;
+    --surface: #1a1a20;
+    --surface2: #22222a;
+    --border: #2e2e38;
+    --accent: #c8f04a;
+    --text: #f0f0f0;
+    --muted: #6b6b7e;
+    --error: #ff5f5f;
+    --radius: 14px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    font-family: 'Geologica', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 16px 14px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .header-title {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 13px; font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--accent);
+  }
+  .header-sub {
+    font-size: 11px; color: var(--muted); margin-top: 2px;
+  }
+
+  .panel { padding: 20px 16px 140px; }
+
+  .section-label {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 9px; font-weight: 700;
+    letter-spacing: 0.15em; text-transform: uppercase;
+    color: var(--muted);
+    margin: 24px 0 10px;
+  }
+  .section-label:first-child { margin-top: 4px; }
+
+  .field { margin-bottom: 12px; }
+
+  label {
+    display: block; font-size: 12px;
+    color: var(--muted); margin-bottom: 5px;
+  }
+
+  input[type="text"], input[type="number"], input[type="date"],
+  input[type="url"], select, textarea {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: 'Geologica', sans-serif;
+    font-size: 15px; padding: 13px 15px;
+    outline: none;
+    transition: border-color 0.2s;
+    -webkit-appearance: none; appearance: none;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+  input::placeholder, textarea::placeholder { color: var(--muted); }
+  input[type="date"] { color-scheme: dark; }
+
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b6b7e' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 15px center;
+    padding-right: 40px; cursor: pointer;
+  }
+  select option { background: #22222a; }
+
+  textarea { resize: none; min-height: 80px; line-height: 1.5; }
+
+  /* Мультивибір міток */
+  .chip-group { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { position: relative; }
+  .chip input[type="checkbox"] { position: absolute; opacity: 0; width: 0; height: 0; }
+  .chip label {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 9px 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    cursor: pointer;
+    font-size: 13px; font-weight: 500;
+    color: var(--muted);
+    transition: all 0.18s;
+    margin: 0;
+    white-space: nowrap;
+  }
+  .chip input[type="checkbox"]:checked + label {
+    background: rgba(200,240,74,0.13);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .chip-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* Вибір платформи менеджера */
+  .platform-group { display: flex; gap: 8px; margin-top: 8px; }
+  .platform-opt { position: relative; flex: 1; }
+  .platform-opt input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
+  .platform-opt label {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 11px 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer; font-size: 13px; font-weight: 500;
+    color: var(--muted); transition: all 0.18s; margin: 0;
+  }
+  .platform-opt input[type="radio"]:checked + label {
+    background: rgba(200,240,74,0.13);
+    border-color: var(--accent); color: var(--accent);
+  }
+
+  /* Завантаження фото */
+  .photo-upload {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 20px; text-align: center;
+    cursor: pointer; transition: border-color 0.2s;
+    position: relative; overflow: hidden;
+  }
+  .photo-upload:hover { border-color: var(--muted); }
+  .photo-upload.has-photo { border-color: var(--accent); border-style: solid; }
+  .photo-upload input[type="file"] {
+    position: absolute; inset: 0; opacity: 0;
+    cursor: pointer; width: 100%; height: 100%;
+    border: none; background: none; padding: 0;
+  }
+  .photo-icon { font-size: 28px; margin-bottom: 6px; }
+  .photo-label { font-size: 13px; color: var(--muted); }
+  .photo-preview {
+    width: 100%; max-height: 120px; object-fit: cover;
+    border-radius: calc(var(--radius) - 4px);
+    display: none;
+  }
+  .photo-preview.show { display: block; }
+  .photo-hint { font-size: 11px; color: var(--muted); margin-top: 6px; }
+
+  .optional {
+    display: inline-block; font-size: 10px;
+    background: var(--surface2); color: var(--muted);
+    border-radius: 4px; padding: 1px 6px; margin-left: 6px;
+  }
+
+  /* Статус (авто) */
+  .status-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(255,95,95,0.12);
+    border: 1px solid rgba(255,95,95,0.35);
+    border-radius: 100px;
+    padding: 8px 16px;
+    font-size: 13px; font-weight: 500;
+    color: #ff5f5f;
+  }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #ff5f5f; }
+
+  /* Кнопка */
+  .submit-wrap {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+    background: linear-gradient(to top, var(--bg) 70%, transparent);
+    z-index: 200;
+  }
+  #submit-btn {
+    width: 100%;
+    background: var(--accent); color: #0f0f12;
+    border: none; border-radius: var(--radius);
+    font-family: 'Unbounded', sans-serif;
+    font-size: 13px; font-weight: 700; letter-spacing: 0.05em;
+    padding: 16px; cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+    -webkit-appearance: none;
+  }
+  #submit-btn:active { transform: scale(0.98); }
+  #submit-btn:disabled { opacity: 0.45; }
+
+  .toast {
+    position: fixed; top: 70px; left: 50%; transform: translateX(-50%);
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 100px; padding: 10px 20px;
+    font-size: 13px; font-weight: 500;
+    z-index: 300; white-space: nowrap;
+    opacity: 0; transition: opacity 0.3s; pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+  .toast.ok { border-color: var(--accent); color: var(--accent); }
+  .toast.err { border-color: var(--error); color: var(--error); }
+
+  /* Прихований canvas для кропу */
+  #crop-canvas { display: none; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-title">📋 Нова співпраця</div>
+  <div class="header-sub">Blogger Irina Zelinskaya · Trello</div>
+</div>
+
+<div class="panel">
+
+  <!-- НАЗВА -->
+  <div class="section-label">Картка</div>
+  <div class="field">
+    <label>Назва картки *</label>
+    <input type="text" id="card-name" placeholder="Наприклад: TERKA — рілс червень" autocomplete="off">
+  </div>
+
+  <div class="field">
+    <label>Дата співпраці (завершення) *</label>
+    <input type="date" id="card-date">
+  </div>
+
+  <!-- СТАТУС (авто) -->
+  <div class="field">
+    <label>Статус</label>
+    <div class="status-badge"><div class="status-dot"></div> Не сплачено — виставляється автоматично</div>
+  </div>
+
+  <!-- ФОРМАТ (мультивибір) -->
+  <div class="section-label">Формат співпраці *</div>
+  <div class="chip-group" id="format-group">
+    <div class="chip">
+      <input type="checkbox" id="fmt-reels-joint" value="674efc3fc689bcd5092763e8">
+      <label for="fmt-reels-joint"><span class="chip-dot" style="background:#4caf6e"></span>Інста + спільна</label>
+    </div>
+    <div class="chip">
+      <input type="checkbox" id="fmt-reels-solo" value="67f7b33e1ba6c84cff640d8b">
+      <label for="fmt-reels-solo"><span class="chip-dot" style="background:#8bc34a"></span>Інста (без співавт.)</label>
+    </div>
+    <div class="chip">
+      <input type="checkbox" id="fmt-tiktok" value="674ed7e3461421ff6708cce8">
+      <label for="fmt-tiktok"><span class="chip-dot" style="background:#29b6d8"></span>Тік Ток</label>
+    </div>
+    <div class="chip">
+      <input type="checkbox" id="fmt-stories" value="674efc212606502f4af31355">
+      <label for="fmt-stories"><span class="chip-dot" style="background:#c6e87a"></span>Сторіс</label>
+    </div>
+    <div class="chip">
+      <input type="checkbox" id="fmt-joint" value="6809e9925399e9d648a3bdd4">
+      <label for="fmt-joint"><span class="chip-dot" style="background:#90caf9"></span>Спільна публікація</label>
+    </div>
+    <div class="chip">
+      <input type="checkbox" id="fmt-ugc" value="685a62a270052867cf5537be">
+      <label for="fmt-ugc"><span class="chip-dot" style="background:#e91e8c"></span>UGC для бренду</label>
+    </div>
+    <div class="chip">
+      <input type="checkbox" id="fmt-barter" value="674efc10014215c00239f963">
+      <label for="fmt-barter"><span class="chip-dot" style="background:#888"></span>Бартер</label>
+    </div>
+  </div>
+
+  <!-- СУМА -->
+  <div class="section-label">Фінанси</div>
+  <div class="field">
+    <label>Сума співпраці (грн) *</label>
+    <input type="number" id="card-suma" placeholder="0" inputmode="numeric" min="0">
+  </div>
+
+  <!-- КАТЕГОРІЯ -->
+  <div class="field">
+    <label>Категорія *</label>
+    <select id="card-category">
+      <option value="" disabled selected>Оберіть категорію…</option>
+      <option value="Хімія">Хімія</option>
+      <option value="Пральні засоби">Пральні засоби</option>
+      <option value="Доглядова косметика">Доглядова косметика</option>
+      <option value="Декоративна косметика">Декоративна косметика</option>
+      <option value="Засоби для волосся">Засоби для волосся</option>
+      <option value="Одяг">Одяг</option>
+      <option value="Маркетплейси">Маркетплейси</option>
+      <option value="Побутова техніка">Побутова техніка</option>
+      <option value="Дитячі товари">Дитячі товари</option>
+      <option value="Іграшки">Іграшки</option>
+      <option value="Інше">Інше</option>
+    </select>
+  </div>
+
+  <!-- МЕНЕДЖЕР -->
+  <div class="section-label">Контакт менеджера <span class="optional">необов'язково</span></div>
+  <div class="field">
+    <label>Нікнейм</label>
+    <input type="text" id="mgr-nick" placeholder="@username" autocomplete="off">
+  </div>
+  <div class="field">
+    <label>Платформа для зв'язку</label>
+    <div class="platform-group">
+      <div class="platform-opt">
+        <input type="radio" name="mgr-platform" id="plt-tg" value="Telegram">
+        <label for="plt-tg">✈️ Telegram</label>
+      </div>
+      <div class="platform-opt">
+        <input type="radio" name="mgr-platform" id="plt-ig" value="Instagram">
+        <label for="plt-ig">📸 Instagram</label>
+      </div>
+      <div class="platform-opt">
+        <input type="radio" name="mgr-platform" id="plt-other" value="Інше">
+        <label for="plt-other">💬 Інше</label>
+      </div>
+    </div>
+  </div>
+
+  <!-- БРИФ -->
+  <div class="section-label">Бриф <span class="optional">необов'язково</span></div>
+  <div class="field">
+    <label>Посилання на бриф</label>
+    <input type="url" id="card-brief" placeholder="https://…" inputmode="url">
+  </div>
+
+  <!-- ФОТО -->
+  <div class="section-label">Скрін листування <span class="optional">необов'язково</span></div>
+  <div class="field">
+    <div class="photo-upload" id="photo-upload-area">
+      <input type="file" id="photo-input" accept="image/*">
+      <div id="photo-placeholder">
+        <div class="photo-icon">📷</div>
+        <div class="photo-label">Завантажити скрін</div>
+        <div class="photo-hint">Залишить верхні 250px — буде обкладинкою картки</div>
+      </div>
+      <img id="photo-preview" class="photo-preview" alt="preview">
+    </div>
+  </div>
+
+</div>
+
+<canvas id="crop-canvas"></canvas>
+
+<div class="submit-wrap">
+  <button id="submit-btn">Створити картку в Trello</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── Telegram ──────────────────────────────────────────
+  const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+  if (tg) { tg.ready(); tg.expand(); }
+
+  // ── Config ────────────────────────────────────────────
+  const WEBHOOK = 'https://hook.eu1.make.com/8lr6xilpkimon9ms55fceop3jqpuupng';
+  const LABEL_NOT_PAID = '674ed7e25fa592b4e18d3559'; // Не сплачено
+
+  // ── Toast ─────────────────────────────────────────────
+  function showToast(msg, type) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = 'toast show ' + type;
+    setTimeout(function() { el.classList.remove('show'); }, 3500);
+  }
+
+  // ── Фото: кроп верхніх CROP_PX пікселів ──────────────
+  const CROP_PX = 250;
+  let croppedBase64 = null;
+
+  document.getElementById('photo-input').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      const img = new Image();
+      img.onload = function() {
+        const canvas = document.getElementById('crop-canvas');
+        const cropH = Math.min(CROP_PX, img.height);
+        canvas.width  = img.width;
+        canvas.height = cropH;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, img.width, cropH, 0, 0, img.width, cropH);
+        croppedBase64 = canvas.toDataURL('image/jpeg', 0.88);
+
+        // Показуємо прев'ю
+        const preview = document.getElementById('photo-preview');
+        preview.src = croppedBase64;
+        preview.classList.add('show');
+        document.getElementById('photo-placeholder').style.display = 'none';
+        document.getElementById('photo-upload-area').classList.add('has-photo');
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  // ── Валідація ─────────────────────────────────────────
+  function getSelectedFormats() {
+    return Array.from(document.querySelectorAll('#format-group input[type="checkbox"]:checked'))
+      .map(function(cb) { return cb.value; });
+  }
+
+  function validate() {
+    if (!document.getElementById('card-name').value.trim()) return 'Введіть назву картки';
+    if (!document.getElementById('card-date').value)        return 'Вкажіть дату співпраці';
+    if (getSelectedFormats().length === 0)                  return 'Оберіть формат співпраці';
+    if (!document.getElementById('card-suma').value)        return 'Введіть суму';
+    if (!document.getElementById('card-category').value)    return 'Оберіть категорію';
+    return null;
+  }
+
+  // ── Submit ────────────────────────────────────────────
+  document.getElementById('submit-btn').addEventListener('click', function() {
+    const err = validate();
+    if (err) { showToast(err, 'err'); return; }
+
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = true;
+    btn.textContent = 'Створюємо картку…';
+
+    // Збираємо мітки: формати + обов'язково "Не сплачено"
+    const labelIds = getSelectedFormats();
+    if (!labelIds.includes(LABEL_NOT_PAID)) labelIds.push(LABEL_NOT_PAID);
+
+    // Менеджер
+    const mgrNick     = document.getElementById('mgr-nick').value.trim();
+    const mgrPlatform = (document.querySelector('input[name="mgr-platform"]:checked') || {}).value || '';
+
+    // Payload
+    const payload = {
+      type:          'new_collab',
+      card_name:     document.getElementById('card-name').value.trim(),
+      date_due:      document.getElementById('card-date').value,       // YYYY-MM-DD
+      suma:          Number(document.getElementById('card-suma').value),
+      category:      document.getElementById('card-category').value,
+      label_ids:     labelIds,
+      brief_url:     document.getElementById('card-brief').value.trim(),
+      mgr_nick:      mgrNick,
+      mgr_platform:  mgrPlatform,
+      cover_image:   croppedBase64 || null  // base64 або null
+    };
+
+    fetch(WEBHOOK, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(payload)
+    })
+    .then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      showToast('✅ Картку створено в Trello!', 'ok');
+      setTimeout(function() { if (tg) tg.close(); }, 2000);
+    })
+    .catch(function(e) {
+      showToast('Помилка: ' + e.message, 'err');
+      btn.disabled = false;
+      btn.textContent = 'Створити картку в Trello';
+    });
+  });
+</script>
+</body>
+</html>

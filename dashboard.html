@@ -106,7 +106,7 @@
 
   /* ── PERIOD SWITCHER ── */
   .period-wrap {
-    display: flex; gap: 8px; margin-bottom: 32px; flex-wrap: wrap;
+    display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap;
   }
   .period-btn {
     background: var(--surface2); border: 1px solid var(--border);
@@ -120,6 +120,48 @@
     background: rgba(200,240,74,0.12);
     border-color: var(--accent); color: var(--accent);
   }
+
+  /* ── МІСЯЦЬ НАВІГАЦІЯ ── */
+  .month-nav {
+    display: none; align-items: center; gap: 12px;
+    margin-bottom: 12px;
+  }
+  .month-nav.visible { display: flex; }
+  .month-nav-btn {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; color: var(--muted);
+    width: 36px; height: 36px; cursor: pointer;
+    font-size: 16px; display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s; flex-shrink: 0;
+  }
+  .month-nav-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .month-nav-btn:disabled { opacity: 0.3; cursor: default; }
+  .month-nav-label {
+    font-family: 'Unbounded', sans-serif; font-size: 13px; font-weight: 600;
+    color: var(--text); flex: 1; text-align: center;
+  }
+
+  /* ── ПОРІВНЯННЯ ── */
+  .compare-wrap {
+    display: none; align-items: center; gap: 10px;
+    margin-bottom: 28px; flex-wrap: wrap;
+  }
+  .compare-wrap.visible { display: flex; }
+  .compare-label {
+    font-size: 11px; color: var(--muted);
+    font-family: 'Unbounded', sans-serif; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .compare-select {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; color: var(--text);
+    font-family: 'Geologica', sans-serif; font-size: 13px;
+    padding: 8px 14px; cursor: pointer; outline: none;
+    transition: border-color 0.2s; flex: 1; max-width: 220px;
+  }
+  .compare-select:focus { border-color: var(--accent); }
+  .compare-select option { background: var(--surface2); }
 
   /* ── KPI CARDS ── */
   .kpi-grid {
@@ -252,6 +294,21 @@
       <button class="period-btn" data-period="year">Рік</button>
     </div>
 
+    <!-- МІСЯЦЬ НАВІГАЦІЯ -->
+    <div class="month-nav visible" id="month-nav">
+      <button class="month-nav-btn" id="month-prev">←</button>
+      <div class="month-nav-label" id="month-nav-label">—</div>
+      <button class="month-nav-btn" id="month-next">→</button>
+    </div>
+
+    <!-- ПОРІВНЯННЯ -->
+    <div class="compare-wrap visible" id="compare-wrap">
+      <div class="compare-label">Порівняти з</div>
+      <select class="compare-select" id="compare-select">
+        <option value="prev">Попереднім місяцем</option>
+      </select>
+    </div>
+
     <!-- KPI -->
     <div class="kpi-grid" id="kpi-grid">
       <div class="kpi-card">
@@ -308,7 +365,7 @@
 // ─────────────────────────────────────────────────────
 // КОНФІГ
 // ─────────────────────────────────────────────────────
-var API_URL  = 'https://script.google.com/macros/s/AKfycbw9VmfsZ6OEvd-C4IbhXdTZxXJRQ6b5J3j410CotmVPjcsM5jxA2jzaTBTqPxYt1BRc/exec'; // Вставиш URL Apps Script після деплою
+var API_URL  = 'https://script.google.com/macros/s/AKfycbw3smOoSbmDJo5QqWs7XPBZ06WuJW6ozb19mmy1G4xBfdiiabSwHLsK1tdRT5P0E5_2/exec'; // Вставиш URL Apps Script після деплою
 var PASSWORD = 'maudau2026';
 
 var FORMAT_COLORS = {
@@ -323,6 +380,8 @@ var FORMAT_COLORS = {
 
 var state = {
   period: 'month',
+  monthOffset: 0,    // 0 = поточний місяць, 1 = минулий, 2 = позаминулий...
+  compareOffset: 1,  // offset місяця для порівняння
   allRows: [],
   pwd: ''
 };
@@ -359,8 +418,8 @@ document.getElementById('pwd-input').addEventListener('keydown', function(e) {
 // ─────────────────────────────────────────────────────
 function loadData() {
   if (!API_URL) {
-    // Демо-дані поки не підключено API
     state.allRows = generateDemoData();
+    buildCompareOptions();
     render();
     return;
   }
@@ -369,6 +428,7 @@ function loadData() {
     .then(function(data) {
       if (data.error) { alert('Помилка: ' + data.error); return; }
       state.allRows = data.rows || [];
+      buildCompareOptions();
       render();
     })
     .catch(function(e) { alert('Не вдалось завантажити дані: ' + e.message); });
@@ -403,8 +463,10 @@ function getPeriodBounds(period, offset) {
   var start, end;
 
   if (period === 'month') {
-    start = new Date(now.getFullYear(), now.getMonth() - offset, 1);
-    end   = new Date(now.getFullYear(), now.getMonth() - offset + 1, 0);
+    // Враховуємо monthOffset для навігації
+    var totalOffset = (state.monthOffset || 0) + offset;
+    start = new Date(now.getFullYear(), now.getMonth() - totalOffset, 1);
+    end   = new Date(now.getFullYear(), now.getMonth() - totalOffset + 1, 0);
   } else if (period === 'quarter') {
     var q = Math.floor(now.getMonth() / 3) - offset;
     var y = now.getFullYear() + Math.floor(q / 4);
@@ -416,6 +478,55 @@ function getPeriodBounds(period, offset) {
     end   = new Date(now.getFullYear() - offset, 11, 31);
   }
   return { start: start, end: end };
+}
+
+// ─────────────────────────────────────────────────────
+// СПИСОК МІСЯЦІВ ДЛЯ ПОРІВНЯННЯ
+// ─────────────────────────────────────────────────────
+function buildCompareOptions() {
+  var sel = document.getElementById('compare-select');
+  var now = new Date();
+  // Знаходимо найстаріший місяць в даних
+  var minDate = now;
+  state.allRows.forEach(function(r) {
+    var d = new Date(r.date);
+    if (d < minDate) minDate = d;
+  });
+
+  sel.innerHTML = '';
+  var months = [];
+  var cur = new Date(now.getFullYear(), now.getMonth(), 1);
+  var min = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
+
+  while (cur >= min) {
+    cur.setMonth(cur.getMonth() - 1);
+    var label = cur.toLocaleDateString('uk-UA', { month: 'long', year: 'numeric' });
+    var offset = Math.round((new Date(now.getFullYear(), now.getMonth()) - cur) / (1000*60*60*24*30));
+    months.push({ label: label, offset: offset });
+  }
+
+  months.forEach(function(m) {
+    var opt = document.createElement('option');
+    opt.value = m.offset;
+    opt.textContent = m.label;
+    if (m.offset === 1) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+// ─────────────────────────────────────────────────────
+// ОНОВЛЕННЯ НАВІГАЦІЇ
+// ─────────────────────────────────────────────────────
+function updateMonthNav() {
+  var now = new Date();
+  var b = getPeriodBounds('month', 0);
+  var label = b.start.toLocaleDateString('uk-UA', { month: 'long', year: 'numeric' });
+  // Перша буква велика
+  label = label.charAt(0).toUpperCase() + label.slice(1);
+  document.getElementById('month-nav-label').textContent = label;
+
+  // Кнопка "вперед" недоступна якщо вже поточний місяць
+  document.getElementById('month-next').disabled = state.monthOffset === 0;
 }
 
 function filterRows(rows, start, end) {
@@ -496,16 +607,33 @@ function periodLabel(period, offset) {
 // ─────────────────────────────────────────────────────
 function render() {
   var period = state.period;
+
+  // Для місяця — навігація і кастомне порівняння
+  if (period === 'month') {
+    updateMonthNav();
+    document.getElementById('month-nav').classList.add('visible');
+    document.getElementById('compare-wrap').classList.add('visible');
+  } else {
+    document.getElementById('month-nav').classList.remove('visible');
+    document.getElementById('compare-wrap').classList.remove('visible');
+  }
+
   var curr = getPeriodBounds(period, 0);
-  var prev = getPeriodBounds(period, 1);
+
+  // Для місяця compareOffset з селекту, для решти — завжди 1
+  var compareOff = period === 'month' ? (state.compareOffset || 1) : 1;
+  // compareOffset відносний до поточного вибраного місяця
+  var prevStart = new Date(curr.start.getFullYear(), curr.start.getMonth() - compareOff, 1);
+  var prevEnd   = new Date(curr.start.getFullYear(), curr.start.getMonth() - compareOff + 1, 0);
 
   var currRows = filterRows(state.allRows, curr.start, curr.end);
-  var prevRows = filterRows(state.allRows, prev.start, prev.end);
+  var prevRows = filterRows(state.allRows, prevStart, prevEnd);
 
   var kpiC = calcKpi(currRows);
   var kpiP = calcKpi(prevRows);
 
-  var prevLabel = 'ніж ' + periodLabel(period, 1);
+  var prevMonthLabel = prevStart.toLocaleDateString('uk-UA', { month: 'long' });
+  var prevLabel = 'ніж ' + prevMonthLabel;
 
   // KPI Revenue
   document.getElementById('kpi-revenue').innerHTML = fmtMoney(kpiC.suma);
@@ -609,13 +737,29 @@ function renderCategoryChart(rows) {
   });
 }
 
+// ── Розбиває рядок форматів на окремі мітки ───────────
+function expandFormats(rows) {
+  var grouped = {};
+  rows.forEach(function(r) {
+    if (!r.format) return;
+    var parts = r.format.split(',');
+    parts.forEach(function(p) {
+      var fmt = p.trim();
+      if (!fmt) return;
+      if (!grouped[fmt]) grouped[fmt] = { count: 0 };
+      grouped[fmt].count++;
+    });
+  });
+  return grouped;
+}
+
 function renderFormatChart(rows) {
   destroyChart('format');
-  var grouped = groupByKey(rows, function(r){ return r.format; });
-  var sorted = Object.keys(grouped).sort(function(a,b){ return grouped[b].count - grouped[a].count; });
-  var labels = sorted.slice(0,6);
-  var data   = labels.map(function(k){ return grouped[k].count; });
-  var colors = labels.map(function(l){ return FORMAT_COLORS[l] || '#5a5a70'; });
+  var grouped = expandFormats(rows);
+  var sorted  = Object.keys(grouped).sort(function(a,b){ return grouped[b].count - grouped[a].count; });
+  var labels  = sorted.slice(0,7);
+  var data    = labels.map(function(k){ return grouped[k].count; });
+  var colors  = labels.map(function(l){ return FORMAT_COLORS[l] || '#5a5a70'; });
 
   var ctx = document.getElementById('format-chart').getContext('2d');
   charts['format'] = new Chart(ctx, {
@@ -625,7 +769,7 @@ function renderFormatChart(rows) {
       responsive: true, maintainAspectRatio: false,
       plugins: {
         legend: { position: 'right', labels: { color: '#f0f0f0', font: { size: 11 }, boxWidth: 12, padding: 10 } },
-        tooltip: { callbacks: { label: function(ctx){ return ' ' + ctx.raw + ' співпраць'; } } }
+        tooltip: { callbacks: { label: function(ctx){ return ' ' + ctx.raw + ' разів'; } } }
       }
     }
   });
@@ -653,16 +797,17 @@ function renderCatList(rows) {
 // FORMAT LIST
 // ─────────────────────────────────────────────────────
 function renderFmtList(rows) {
-  var grouped = groupByKey(rows, function(r){ return r.format; });
-  var total = rows.length || 1;
+  var grouped = expandFormats(rows);
+  // Рахуємо загальну кількість згадувань (не співпраць)
+  var totalMentions = Object.keys(grouped).reduce(function(s,k){ return s + grouped[k].count; }, 0) || 1;
   var sorted = Object.keys(grouped).sort(function(a,b){ return grouped[b].count - grouped[a].count; });
   var html = '';
   sorted.forEach(function(fmt) {
-    var pct = Math.round(grouped[fmt].count / total * 100);
+    var pct   = Math.round(grouped[fmt].count / totalMentions * 100);
     var color = FORMAT_COLORS[fmt] || '#5a5a70';
     html += '<div class="fmt-row">' +
       '<div class="fmt-left"><div class="fmt-dot" style="background:' + color + '"></div><div class="fmt-name">' + fmt + '</div></div>' +
-      '<div class="fmt-right"><span class="fmt-pct">' + pct + '%</span><span class="fmt-count">' + grouped[fmt].count + ' шт.</span></div>' +
+      '<div class="fmt-right"><span class="fmt-pct">' + pct + '%</span><span class="fmt-count">' + grouped[fmt].count + ' разів</span></div>' +
       '</div>';
   });
   document.getElementById('fmt-list').innerHTML = html || '<div class="state-msg">Немає даних</div>';
@@ -671,13 +816,34 @@ function renderFmtList(rows) {
 // ─────────────────────────────────────────────────────
 // CONTROLS
 // ─────────────────────────────────────────────────────
+// Перемикачі місяць/квартал/рік
 document.querySelectorAll('.period-btn').forEach(function(btn) {
   btn.addEventListener('click', function() {
     document.querySelectorAll('.period-btn').forEach(function(b){ b.classList.remove('active'); });
     btn.classList.add('active');
     state.period = btn.dataset.period;
+    state.monthOffset = 0; // скидаємо на поточний при зміні типу
     render();
   });
+});
+
+// Навігація по місяцях ← →
+document.getElementById('month-prev').addEventListener('click', function() {
+  state.monthOffset++;
+  render();
+});
+document.getElementById('month-next').addEventListener('click', function() {
+  if (state.monthOffset > 0) state.monthOffset--;
+  render();
+});
+
+// Вибір місяця для порівняння
+document.getElementById('compare-select').addEventListener('change', function() {
+  // compareOffset — скільки місяців назад від вибраного місяця
+  var absOffset = parseInt(this.value); // абсолютний offset від сьогодні
+  state.compareOffset = absOffset - (state.monthOffset || 0);
+  if (state.compareOffset <= 0) state.compareOffset = 1;
+  render();
 });
 
 document.getElementById('refresh-btn').addEventListener('click', loadData);
